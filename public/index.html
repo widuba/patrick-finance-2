@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patrick's Finance — Learn Saving with Priorities</title>
+<meta name="description" content="A beginner-friendly simulator that teaches saving with priorities using bi-weekly paychecks and simple goals." />
+<style>
+  :root{
+    --bg:#0f1221; --card:#161a31; --muted:#a4acc4; --text:#eef1ff;
+    --accent:#7c5cff; --accent2:#20dfa8; --danger:#ff5470; --ok:#40d37a;
+    --shadow:0 12px 30px rgba(0,0,0,.35);
+    --grid-gap:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    color:var(--text);
+    background:
+      radial-gradient(900px 500px at 15% -10%,rgba(124,92,255,.25),transparent),
+      radial-gradient(700px 500px at 110% 0%,rgba(32,223,168,.18),transparent),
+      var(--bg);
+    min-height:100dvh; display:grid; place-items:start center; padding:24px;
+  }
+  .wrap{width:100%; max-width:1100px; display:grid; gap:var(--grid-gap)}
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.08); border-radius:18px; box-shadow:var(--shadow);
+    padding:18px;
+  }
+  h1,h2,h3{margin:0 0 10px}
+  p{margin:6px 0}
+  .muted{color:var(--muted)} .small{font-size:.92rem}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .col{display:grid; gap:10px}
+  input, button, select{font:inherit; color:var(--text)}
+  label{display:block; font-weight:600; margin-top:4px}
+  input, select{
+    background:var(--card); border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:10px; outline:none;
+  }
+  input[type="date"]{color-scheme:dark}
+  button{
+    background:var(--accent); border:0; padding:10px 14px; border-radius:10px; cursor:pointer;
+    transition:transform .04s ease, filter .2s ease;
+  }
+  button:hover{filter:brightness(1.06)}
+  button:active{transform:translateY(1px)}
+  .btn-ghost{background:transparent; border:1px solid rgba(255,255,255,.15)}
+  .btn-danger{background:var(--danger)}
+  .grid{display:grid; gap:var(--grid-gap)}
+  .grid-2{grid-template-columns:1fr 1fr}
+  @media (max-width:900px){.grid-2{grid-template-columns:1fr}}
+  table{width:100%; border-collapse:collapse}
+  th,td{padding:10px; text-align:left}
+  thead th{color:var(--muted); font-weight:700}
+  tbody tr+tr td, thead tr+tr th{border-top:1px solid rgba(255,255,255,.1)}
+  .right{margin-left:auto}
+  .chip{padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05)}
+  .viz{
+    display:flex; gap:10px; align-items:flex-end; overflow:auto; padding-bottom:4px;
+  }
+  .bar{
+    display:grid; align-content:end; min-width:46px; border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.03); border-radius:10px; overflow:hidden;
+  }
+  .bar .seg{width:100%}
+  .legend{display:flex; gap:10px; flex-wrap:wrap}
+  .legend .item{display:flex; align-items:center; gap:8px}
+  .swatch{width:14px; height:14px; border-radius:3px; border:1px solid rgba(0,0,0,.25)}
+  .total{
+    font-size:2rem; font-weight:800; letter-spacing:.3px;
+    background:linear-gradient(90deg,#fff,#d7deff); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .empty{color:#cbd2ff; opacity:.9; border:1px dashed rgba(255,255,255,.2); padding:14px; border-radius:12px}
+  .note{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); padding:10px 12px; border-radius:12px}
+  .ok{color:var(--ok)} .warn{color:#ffd166}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Patrick’s Finance</h1>
+      <p class="muted">A super-simple way to learn how <em>saving with priorities</em> works. You’ll enter what you make every two weeks, add a few things you care about, and this page will plan how each paycheck builds toward those goals—so you can see how saving beats impulse spending.</p>
+      <p class="small note">Educational simulation only. We intentionally ignore living expenses, debts, and taxes to keep the lesson focused on priorities.</p>
+    </div>
+
+    <!-- STEP 1: Income -->
+    <div class="card">
+      <h2>Step 1 — Your bi-weekly income</h2>
+      <div class="grid grid-2">
+        <div class="col">
+          <label>How much do you get <strong>every 2 weeks</strong>?</label>
+          <input id="income" type="number" min="0" step="1" placeholder="e.g., 1000" />
+        </div>
+        <div class="col">
+          <label>When is your <strong>next payday</strong>?</label>
+          <input id="startDate" type="date" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="col" style="min-width:260px">
+          <label>How far do you want to plan?</label>
+          <select id="horizon">
+            <option value="1">1 month</option>
+            <option value="2">2 months</option>
+            <option value="3" selected>3 months</option>
+            <option value="6">6 months</option>
+          </select>
+        </div>
+        <span class="chip right">All income gets saved for goals in this demo.</span>
+      </div>
+    </div>
+
+    <!-- STEP 2: Goals -->
+    <div class="card">
+      <h2>Step 2 — Add goals (what you care about)</h2>
+      <div class="row">
+        <input id="gName" placeholder="Goal name (e.g., Concert, New Game, Trip)" style="flex:2; min-width:220px" />
+        <input id="gCost" type="number" min="1" step="1" placeholder="Cost (e.g., 500)" style="flex:1; min-width:160px" />
+        <input id="gDue" type="date" style="flex:1; min-width:170px" />
+        <select id="gPriority" style="flex:1; min-width:160px">
+          <option value="3" selected>Priority: 3 (normal)</option>
+          <option value="5">Priority: 5 (must-have)</option>
+          <option value="4">Priority: 4</option>
+          <option value="2">Priority: 2</option>
+          <option value="1">Priority: 1 (nice-to-have)</option>
+        </select>
+        <button id="addGoal">Add goal</button>
+      </div>
+      <div class="row" style="margin-top:8px; gap:8px">
+        <button class="btn-ghost" id="addExamples">Add example goals</button>
+        <button class="btn-ghost" id="clearGoals">Clear goals</button>
+        <span class="muted small">Tip: Higher priority + sooner due date = more money earlier.</span>
+      </div>
+
+      <div id="goalsEmpty" class="empty" style="margin-top:12px">No goals yet. Add one above to get started.</div>
+      <table id="goalsTable" style="display:none; margin-top:10px">
+        <thead>
+          <tr>
+            <th>#</th><th>Goal</th><th>Cost</th><th>Due</th><th>Priority</th><th class="right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="goalsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- STEP 3: Plan -->
+    <div class="card">
+      <div class="row" style="align-items:flex-end">
+        <h2>Step 3 — Your saving plan</h2>
+        <button id="buildPlan" class="right">Build / Update Plan</button>
+      </div>
+      <p class="muted small">We break each paycheck into slices that fund your goals on time. You’ll see how saving gradually reaches your target.</p>
+
+      <div id="planSummary" style="margin:10px 0"></div>
+
+      <div id="vizPanel" class="card" style="margin-top:10px; padding:14px">
+        <div class="legend" id="legend"></div>
+        <div class="viz" id="viz" style="margin-top:10px"></div>
+      </div>
+
+      <div id="planEmpty" class="empty" style="display:none; margin-top:10px">Add at least one goal and click “Build / Update Plan”.</div>
+
+      <div id="schedulePanel" style="margin-top:12px">
+        <table>
+          <thead>
+            <tr>
+              <th>Payday</th>
+              <th>Income</th>
+              <th>Allocations</th>
+              <th>Total Saved So Far</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="card">
+      <h3>What you’re learning</h3>
+      <ul class="small">
+        <li><strong>Saving is just future spending with a purpose.</strong> Give your money a job before impulses do.</li>
+        <li><strong>Priorities + deadlines guide each paycheck.</strong> Small chunks add up—this plan shows how.</li>
+        <li><strong>Hitting a goal feels better than random buys.</strong> When a goal is funded, enjoy it guilt-free.</li>
+      </ul>
+      <p class="muted small">This is a demo for learning only (no real budgets/expenses). Data is stored locally in your browser.</p>
+    </div>
+  </div>
+
+<script>
+/* =========================
+   Data + Utilities (Local)
+   ========================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const LS_KEY = 'patricks_finance_v1';
+
+const palette = [
+  '#7c5cff', '#20dfa8', '#ffd166', '#ef476f', '#06d6a0',
+  '#118ab2', '#8338ec', '#ff9f1c', '#06aed5', '#52b788'
+];
+
+function fmtMoney(n){ if (isNaN(n)) return '$0'; return n.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:0}); }
+function dstr(d){ return new Date(d).toLocaleDateString(); }
+function addDays(d,days){ const r = new Date(d); r.setDate(r.getDate()+days); return r; }
+function compareDate(a,b){ return new Date(a) - new Date(b); }
+
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {income:0,startDate:null,horizon:3,goals:[]}; }
+  catch{ return {income:0,startDate:null,horizon:3,goals:[]}; }
+}
+function saveState(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+let state = loadState();
+
+/* =========================
+   UI Init / Bindings
+   ========================= */
+$('#income').value = state.income || '';
+$('#startDate').value = state.startDate || '';
+$('#horizon').value = String(state.horizon || 3);
+
+$('#income').addEventListener('change', () => { state.income = Number($('#income').value||0); saveState(state); });
+$('#startDate').addEventListener('change', () => { state.startDate = $('#startDate').value || null; saveState(state); });
+$('#horizon').addEventListener('change', () => { state.horizon = Number($('#horizon').value||3); saveState(state); });
+
+function renderGoals(){
+  const body = $('#goalsBody');
+  body.innerHTML = '';
+  if(!state.goals.length){
+    $('#goalsEmpty').style.display='block';
+    $('#goalsTable').style.display='none';
+    return;
+  }
+  $('#goalsEmpty').style.display='none';
+  $('#goalsTable').style.display='table';
+  state.goals
+    .sort((a,b)=> compareDate(a.due,b.due) || b.priority - a.priority)
+    .forEach((g,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td><input data-id="${g.id}" class="g-name" value="${escapeHtml(g.name)}" /></td>
+        <td><input data-id="${g.id}" class="g-cost" type="number" min="1" value="${g.cost}" /></td>
+        <td><input data-id="${g.id}" class="g-due" type="date" value="${g.due}" /></td>
+        <td>
+          <select data-id="${g.id}" class="g-priority">
+            ${[5,4,3,2,1].map(p=>`<option value="${p}" ${p===g.priority?'selected':''}>${p}</option>`).join('')}
+          </select>
+        </td>
+        <td class="right">
+          <button class="btn-ghost del-goal" data-id="${g.id}">Delete</button>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+}
+renderGoals();
+
+function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* Add / Clear goals */
+$('#addGoal').addEventListener('click', ()=>{
+  const name = $('#gName').value.trim();
+  const cost = Number($('#gCost').value||0);
+  const due  = $('#gDue').value;
+  const prio = Number($('#gPriority').value||3);
+  if(!name || !cost || !due){ alert('Please fill goal name, cost, and due date.'); return; }
+  state.goals.push({ id:crypto.randomUUID(), name, cost, due, priority: prio, color: palette[state.goals.length%palette.length] });
+  saveState(state);
+  $('#gName').value=''; $('#gCost').value=''; $('#gDue').value='';
+  renderGoals();
+});
+
+$('#clearGoals').addEventListener('click', ()=>{
+  if(!state.goals.length) return;
+  if(confirm('Remove all goals?')){ state.goals=[]; saveState(state); renderGoals(); }
+});
+
+$('#addExamples').addEventListener('click', ()=>{
+  const today = new Date();
+  const endOfMonth = new Date(today.getFullYear(), today.getMonth()+1, 0);
+  const in6w = addDays(today, 42);
+  const in10w = addDays(today, 70);
+  const examples = [
+    {name:'Event Ticket', cost:500, due:endOfMonth.toISOString().slice(0,10), priority:5},
+    {name:'New Game', cost:70, due:in6w.toISOString().slice(0,10), priority:3},
+    {name:'Weekend Trip', cost:300, due:in10w.toISOString().slice(0,10), priority:4},
+  ];
+  examples.forEach((e,i)=> state.goals.push({id:crypto.randomUUID(), color:palette[(state.goals.length+i)%palette.length], ...e}));
+  saveState(state); renderGoals();
+});
+
+/* Goal edits & deletes */
+$('#goalsBody').addEventListener('input', (e)=>{
+  const id = e.target.getAttribute('data-id'); if(!id) return;
+  const g = state.goals.find(x=>x.id===id); if(!g) return;
+  if(e.target.classList.contains('g-name')) g.name = e.target.value.trim();
+  if(e.target.classList.contains('g-cost')) g.cost = Number(e.target.value||0);
+  if(e.target.classList.contains('g-due'))  g.due  = e.target.value;
+  if(e.target.classList.contains('g-priority')) g.priority = Number(e.target.value||3);
+  saveState(state);
+});
+$('#goalsBody').addEventListener('click',(e)=>{
+  if(!e.target.classList.contains('del-goal')) return;
+  const id = e.target.getAttribute('data-id');
+  state.goals = state.goals.filter(x=>x.id!==id);
+  saveState(state); renderGoals();
+});
+
+/* =========================
+   Planning Logic
+   ========================= */
+/**
+ * Build bi-weekly pay dates from start date until either:
+ *  - chosen horizon (months) OR
+ *  - the last goal due date (whichever is later)
+ */
+function buildPaySchedule(startISO, months){
+  if(!startISO) return [];
+  const start = new Date(startISO);
+  const lastGoalDue = state.goals.length ? new Date(state.goals.reduce((m,g)=> Math.max(m, +new Date(g.due)), 0)) : start;
+  const endByHorizon = new Date(start); endByHorizon.setMonth(endByHorizon.getMonth()+months);
+  const end = new Date(Math.max(+lastGoalDue, +endByHorizon));
+  const dates = [];
+  let d = new Date(start);
+  while(d <= end){
+    dates.push(new Date(d));
+    d = addDays(d, 14);
+  }
+  return dates;
+}
+
+/**
+ * Allocation algorithm (gentle & intuitive):
+ *  For each paycheck:
+ *   1) For each goal, compute remaining cost and remaining pay periods before its due date.
+ *   2) Calculate this period's "needed" share = ceil(remaining/remainingPeriods), at least 0.
+ *   3) First pass: pay each goal its "needed" up to available paycheck.
+ *   4) If money remains, second pass: distribute leftovers by (priority desc, sooner due).
+ */
+function plan(income, startISO, months, goals){
+  const paydates = buildPaySchedule(startISO, months);
+  const schedule = [];
+  const remaining = Object.fromEntries(goals.map(g=>[g.id, g.cost]));
+  let cumulative = 0;
+
+  for(const date of paydates){
+    let left = income;
+    const todayISO = date.toISOString().slice(0,10);
+
+    // compute remaining pay periods per goal
+    const meta = goals.map(g=>{
+      const due = new Date(g.due);
+      const periodsLeft = paydates.filter(pd => pd <= due && pd >= date).length; // include this date if <= due
+      return {
+        g,
+        remain: Math.max(0, remaining[g.id]),
+        periodsLeft,
+        due,
+      };
+    }).filter(x=>x.remain>0 && x.periodsLeft>0)
+      .sort((a,b)=> (a.due-b.due) || (b.g.priority - a.g.priority));
+
+    const allocations = {};
+    // 1st pass: pay "needed" chunks
+    for(const m of meta){
+      const need = Math.ceil(m.remain / m.periodsLeft);
+      const pay = Math.min(left, need);
+      if(pay>0){ allocations[m.g.id]=(allocations[m.g.id]||0)+pay; remaining[m.g.id]-=pay; left-=pay; }
+      if(left<=0) break;
+    }
+    // 2nd pass: leftovers by priority & due
+    if(left>0){
+      const still = goals
+        .filter(g=> remaining[g.id]>0 )
+        .sort((a,b)=> (new Date(a.due)-new Date(b.due)) || (b.priority-a.priority));
+      for(const g of still){
+        if(left<=0) break;
+        const amt = Math.min(left, remaining[g.id]);
+        if(amt>0){ allocations[g.id]=(allocations[g.id]||0)+amt; remaining[g.id]-=amt; left-=amt; }
+      }
+    }
+
+    const allocatedTotal = Object.values(allocations).reduce((a,b)=>a+b,0);
+    cumulative += allocatedTotal;
+
+    schedule.push({
+      date: todayISO,
+      income,
+      allocations,
+      leftover: Math.max(0,left),
+      cumulative
+    });
+  }
+
+  // compute goal status
+  const goalStatus = goals.map(g=>({
+    id:g.id, name:g.name, cost:g.cost, due:g.due, priority:g.priority, color:g.color,
+    funded: g.cost - remaining[g.id]
+  }));
+
+  return {paydates, schedule, goalStatus};
+}
+
+/* =========================
+   Rendering the Plan
+   ========================= */
+function build(){
+  const income = Number($('#income').value||0);
+  const startISO = $('#startDate').value;
+  const months = Number($('#horizon').value||3);
+  if(!income || !startISO){ alert('Please enter your income and next payday.'); return; }
+  if(!state.goals.length){ $('#planEmpty').style.display='block'; $('#scheduleBody').innerHTML=''; $('#viz').innerHTML=''; $('#legend').innerHTML=''; $('#planSummary').innerHTML=''; return; }
+
+  const {schedule, goalStatus} = plan(income, startISO, months, state.goals);
+
+  // Summary
+  const fundedNow = goalStatus.filter(g=>g.funded>=g.cost);
+  const onTrack = goalStatus.filter(g=>g.funded<g.cost);
+  const totalSaved = schedule.at(-1)?.cumulative || 0;
+
+  $('#planSummary').innerHTML = `
+    <div class="row">
+      <div class="chip">Total planned savings: <strong>${fmtMoney(totalSaved)}</strong></div>
+      <div class="chip">Goals fully funded now: <strong>${fundedNow.length}</strong></div>
+      <div class="chip">Goals in progress: <strong>${onTrack.length}</strong></div>
+      <span class="right muted small">The plan adjusts automatically as you add goals or change dates.</span>
+    </div>
+  `;
+
+  // Table schedule
+  const body = $('#scheduleBody'); body.innerHTML='';
+  schedule.forEach((row,i)=>{
+    const parts = Object.entries(row.allocations).map(([id,amt])=>{
+      const g = state.goals.find(x=>x.id===id);
+      return `<span class="chip" style="border-color:${shade(g.color, -20)}; background:${shade(g.color, 40)}; color:#061011">${escapeHtml(g.name)}: ${fmtMoney(amt)}</span>`;
+    }).join(' ') || '<span class="muted">No active goals</span>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${dstr(row.date)}</td>
+      <td>${fmtMoney(row.income)}</td>
+      <td>${parts}</td>
+      <td class="${i===schedule.length-1?'total':''}">${fmtMoney(row.cumulative)}</td>
+    `;
+    body.appendChild(tr);
+  });
+
+  // Visualization: per-paycheck stacked bars
+  const viz = $('#viz'); viz.innerHTML='';
+  const legend = $('#legend'); legend.innerHTML='';
+  const activeGoals = state.goals.slice();
+  activeGoals.forEach((g,i)=>{
+    const item = document.createElement('div');
+    item.className='item';
+    item.innerHTML = `<span class="swatch" style="background:${g.color}; border-color:${shade(g.color,-30)}"></span><span class="small">${escapeHtml(g.name)}</span>`;
+    legend.appendChild(item);
+  });
+
+  // Find max bar height (income)
+  const max = Math.max(...schedule.map(r=> r.income));
+  schedule.forEach(r=>{
+    const bar = document.createElement('div');
+    bar.className='bar';
+    bar.title = `Payday ${dstr(r.date)} • ${fmtMoney(r.income)}`;
+    const allocations = r.allocations;
+    const used = Object.entries(allocations)
+      .map(([id,amt])=>({g:state.goals.find(x=>x.id===id), amt}));
+
+    // top label
+    const cap = document.createElement('div');
+    cap.style.textAlign='center'; cap.style.fontSize='.85rem'; cap.style.padding='6px 4px';
+    cap.textContent = new Date(r.date).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    bar.appendChild(cap);
+
+    // segments
+    used.forEach(({g,amt})=>{
+      const seg = document.createElement('div');
+      seg.className='seg';
+      seg.style.height = Math.max(2, Math.round(90*(amt/max))) + 'px';
+      seg.style.background = g.color;
+      seg.style.borderTop = '1px solid '+shade(g.color,-25);
+      seg.title = `${g.name}: ${fmtMoney(amt)}`;
+      bar.appendChild(seg);
+    });
+
+    // leftover (unallocated)
+    const leftover = r.income - Object.values(allocations).reduce((a,b)=>a+b,0);
+    if(leftover>0){
+      const seg = document.createElement('div');
+      seg.className='seg';
+      seg.style.height = Math.max(2, Math.round(90*(leftover/max))) + 'px';
+      seg.style.background = 'linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05))';
+      seg.title = `Leftover: ${fmtMoney(leftover)}`;
+      bar.appendChild(seg);
+    }
+
+    viz.appendChild(bar);
+  });
+
+  $('#planEmpty').style.display='none';
+}
+
+$('#buildPlan').addEventListener('click', build);
+
+/* Color helper */
+function shade(hex,percent){
+  // simple shade on hex like #rrggbb
+  const f=parseInt(hex.slice(1),16), t=percent<0?0:255, p=Math.abs(percent)/100;
+  const R=f>>16, G=f>>8&0x00FF, B=f&0x0000FF;
+  const n = (x)=>Math.round((t-x)*p)+x;
+  return '#'+(0x1000000 + (n(R)<<16) + (n(G)<<8) + n(B)).toString(16).slice(1);
+}
+
+/* Gentle defaults for first-time users */
+if(!state.income) $('#income').value = '';
+if(!state.startDate){
+  const iso = new Date().toISOString().slice(0,10);
+  $('#startDate').value = iso;
+  state.startDate = iso; saveState(state);
+}
+
+/* Auto-build if we already had data */
+if(state.income && state.startDate && state.goals.length) build();
+</script>
+</body>
+</html>
